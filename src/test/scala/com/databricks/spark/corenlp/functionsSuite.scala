@@ -12,6 +12,7 @@ class functionsSuite extends SparkFunSuite {
 
   private val sentence1 = "Stanford University is located in California."
   private val sentence2 = "It is a great university."
+  private val sentence3 = "諾亞聖誕老人馬克杯 228ml"
   private val document = s"$sentence1 $sentence2"
   private val xml = s"<xml><p>$sentence1</p><p>$sentence2</p></xml>"
 
@@ -86,5 +87,10 @@ class functionsSuite extends SparkFunSuite {
     testFunction(sentiment, sentence1, 1)
     testFunction(sentiment, sentence2, 4)
     testFunction(sentiment, document, 1) // only look at the first sentence
+  }
+  test("segment") {
+ //   val expected = Seq("諾亞聖誕", "老人", "馬克杯", "228ml") // when using PKU in model.
+    val expected = Seq("諾亞", "聖誕", "老人", "馬克杯", "228ml") // when using CTB in model.
+    testFunction(segment, sentence3, expected)
   }
 }

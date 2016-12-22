@@ -4,6 +4,7 @@ import java.util.Properties
 
 import scala.collection.JavaConverters._
 
+import edu.stanford.nlp.ie.crf.CRFClassifier
 import edu.stanford.nlp.ling.{CoreAnnotations, CoreLabel}
 import edu.stanford.nlp.neural.rnn.RNNCoreAnnotations
 import edu.stanford.nlp.pipeline.{CleanXmlAnnotator, StanfordCoreNLP}
@@ -13,6 +14,8 @@ import edu.stanford.nlp.simple.{Document, Sentence}
 import edu.stanford.nlp.util.Quadruple
 
 import org.apache.spark.sql.functions.udf
+    
+import com.databricks.spark.corenlp.properties.StanfordCoreNLP_chinese_properties
 
 /**
  * A collection of Spark SQL UDFs that wrap CoreNLP annotators and simple functions.
@@ -21,6 +24,11 @@ import org.apache.spark.sql.functions.udf
 object functions {
 
   @transient private var sentimentPipeline: StanfordCoreNLP = _
+  
+  // create chinese segmenter
+  @transient private var segmenter = new CRFClassifier[CoreLabel](StanfordCoreNLP_chinese_properties.props)
+  @transient private val chinese_model_path = StanfordCoreNLP_chinese_properties.props.getProperty("segLoc")
+  segmenter.loadClassifierNoExceptions(chinese_model_path, StanfordCoreNLP_chinese_properties.props)
 
   private def getOrCreateSentimentPipeline(): StanfordCoreNLP = {
     if (sentimentPipeline == null) {
@@ -30,12 +38,12 @@ object functions {
     }
     sentimentPipeline
   }
-
+    
   private case class OpenIE(subject: String, relation: String, target: String, confidence: Double) {
     def this(quadruple: Quadruple[String, String, String, java.lang.Double]) =
       this(quadruple.first, quadruple.second, quadruple.third, quadruple.fourth)
   }
-
+    
   private case class CorefMention(sentNum: Int, startIndex: Int, mention: String)
 
   private case class CorefChain(representative: String, mentions: Seq[CorefMention])
@@ -47,7 +55,7 @@ object functions {
     target: String,
     targetIndex: Int,
     weight: Double)
-
+      
   /**
    * Cleans XML tags in a document.
    */
@@ -163,5 +171,9 @@ object functions {
       .head
       .get(classOf[SentimentCoreAnnotations.SentimentAnnotatedTree])
     RNNCoreAnnotations.getPredictedClass(tree)
+  }
+    
+  def segment = udf { sentence: String =>
+    segmenter.segmentString(sentence).asScala.toSeq
   }
 }

@@ -7,6 +7,8 @@ name := "spark-corenlp"
 
 version := "0.3.0-SNAPSHOT"
 
+scalaVersion := "2.11.8"
+
 crossScalaVersions := Seq("2.11.8", "2.10.6")
 
 initialize := {
@@ -38,6 +40,9 @@ resolvers += Resolver.mavenLocal
 libraryDependencies ++= Seq(
   "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0",
   "com.google.protobuf" % "protobuf-java" % "2.6.1",
+  "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0" classifier "models",
+  "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0" classifier "models-chinese",
   "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0" % "test" classifier "models",
+  "edu.stanford.nlp" % "stanford-corenlp" % "3.6.0" % "test" classifier "models-chinese",
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
