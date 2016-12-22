@@ -25,7 +25,8 @@ All functions are defined under `com.databricks.spark.corenlp.functions`.
 * *`openie`*: Generates a list of Open IE triples as flat `(subject, relation, target, confidence)`
   tuples.
 * *`sentiment`*: Measures the sentiment of an input sentence on a scale of 0 (strong negative) to 4
-  (strong positive).  
+  (strong positive).
+* *`segment`*: Segments a sentence or document into phrases using the Chinese Segmenter based on Pi-Chuan Chang's CRF Segmenter implementation.
 
 Users can chain the functions to create pipeline, for example:
 
