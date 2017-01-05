@@ -7,6 +7,13 @@ introduced in Stanford CoreNLP 3.6.0.
 This package requires Java 8 and CoreNLP 3.6.0 to run.
 Users must include CoreNLP model jars as dependencies to use language models.
 
+需要在 Spark 環境下進行中文斷詞可使用 segment 及 segment2 annotations.
+
+segment annotation 是由 Stanford CoreNLP Library 的 CRF Classifier 組成.
+
+segment2 annotation 是由 huaban/jieba-analysis 裡提供的 Jieba Segmenter 組成.
+
+
 All functions are defined under `com.databricks.spark.corenlp.functions`.
 
 * *`cleanxml`*: Cleans XML tags in a document and returns the cleaned document.
@@ -26,7 +33,8 @@ All functions are defined under `com.databricks.spark.corenlp.functions`.
   tuples.
 * *`sentiment`*: Measures the sentiment of an input sentence on a scale of 0 (strong negative) to 4
   (strong positive).
-* *`segment`*: Segments a sentence or document into phrases using the Chinese Segmenter based on Pi-Chuan Chang's CRF Segmenter implementation.
+* *`segment`*: Segments a sentence or document into phrases using the CRF Classifier Chinese Segmenter based on Pi-Chuan Chang's CRF Segmenter implementation.
+* *`segment2`*: Segments a sentence or document into phrases using the Jieba Chinese Segmenter.
 
 Users can chain the functions to create pipeline, for example:
 
@@ -55,6 +63,48 @@ output.show(truncate = false)
 |Stanford University is located in California .|[Stanford, University, is, located, in, California, .]|[ORGANIZATION, ORGANIZATION, O, O, O, LOCATION, O]|1        |
 |It is a great university .                    |[It, is, a, great, university, .]                     |[O, O, O, O, O, O]                                |4        |
 +----------------------------------------------+------------------------------------------------------+--------------------------------------------------+---------+
+~~~
+
+~~~
+// With CRF Classifier Segmenter
+val input1 = Seq(
+  (1, "<xml>諾亞聖誕老人馬克杯 228ml</xml>")
+).toDF("id", "text")
+
+val output1 = input
+  .select(cleanxml('text).as('doc))
+  .select('doc, segment('doc).as('phrases))
+
+output1.show(truncate = false)
+~~~
+
+~~~
++---------------------+------------------------------+
+|doc                  |phrases                       |
++---------------------+------------------------------+
+|諾亞聖誕老人馬克杯 228ml|[諾亞, 聖誕, 老人, 馬克杯, 228ml]|
++---------------------+------------------------------+
+~~~
+
+~~~
+// With Jieba Segmenter
+val input2 = Seq(
+  (1, "<xml>土耳其驚爆兩罹難 警正搜捕另一攻擊者</xml>")
+).toDF("id", "text")
+
+val output2 = input
+  .select(cleanxml('text).as('doc))
+  .select('doc, segment2('doc).as('phrases))
+
+output2.show(truncate = false)
+~~~
+
+~~~
++-----------------------------+----------------------------------------------------+
+|doc                          |phrases                                             |
++-----------------------------+----------------------------------------------------+
+|土耳其驚爆兩罹難 警正搜捕另一攻擊者|[土耳其, 驚爆, 兩, 罹難, " ", 警正, 搜捕, 另, 一, 攻擊者]|
++-----------------------------+----------------------------------------------------+
 ~~~
 
 ### Acknowledgements

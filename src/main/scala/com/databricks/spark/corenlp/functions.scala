@@ -2,6 +2,7 @@ package com.databricks.spark.corenlp
 
 import java.util.Properties
 
+import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
 import edu.stanford.nlp.ie.crf.CRFClassifier
@@ -16,6 +17,11 @@ import edu.stanford.nlp.util.Quadruple
 import org.apache.spark.sql.functions.udf
     
 import com.databricks.spark.corenlp.properties.StanfordCoreNLP_chinese_properties
+    
+// Jieba-Analysis
+import com.huaban.analysis.jieba.JiebaSegmenter
+import com.huaban.analysis.jieba.JiebaSegmenter.SegMode
+import com.huaban.analysis.jieba.SegToken
 
 /**
  * A collection of Spark SQL UDFs that wrap CoreNLP annotators and simple functions.
@@ -25,10 +31,13 @@ object functions {
 
   @transient private var sentimentPipeline: StanfordCoreNLP = _
   
-  // create chinese segmenter
-  @transient private var segmenter = new CRFClassifier[CoreLabel](StanfordCoreNLP_chinese_properties.props)
+  // chinese segmenter using CRF Classifier.
+  @transient private var crfSegmenter = new CRFClassifier[CoreLabel](StanfordCoreNLP_chinese_properties.props)
   @transient private val chinese_model_path = StanfordCoreNLP_chinese_properties.props.getProperty("segLoc")
-  segmenter.loadClassifierNoExceptions(chinese_model_path, StanfordCoreNLP_chinese_properties.props)
+  crfSegmenter.loadClassifierNoExceptions(chinese_model_path, StanfordCoreNLP_chinese_properties.props)
+      
+  // chinese segmenter using Jieba Segmenter.
+  @transient private var jiebaSegmenter = new JiebaSegmenter()
 
   private def getOrCreateSentimentPipeline(): StanfordCoreNLP = {
     if (sentimentPipeline == null) {
@@ -174,6 +183,13 @@ object functions {
   }
     
   def segment = udf { sentence: String =>
-    segmenter.segmentString(sentence).asScala.toSeq
+    crfSegmenter.segmentString(sentence).asScala.toSeq
+  }
+    
+  def segment2 = udf { sentence: String =>
+    scala.collection.JavaConversions.asScalaBuffer(jiebaSegmenter.process(sentence, SegMode.SEARCH))
+      .toSeq
+      .map(o => o.asInstanceOf[SegToken])
+      .map(tok => tok.word)
   }
 }
